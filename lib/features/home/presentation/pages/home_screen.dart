@@ -302,11 +302,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPopularList(BuildContext context, List<Cafe> cafes) {
+    if (cafes.isEmpty) return const SizedBox.shrink();
+    
     return SizedBox(
       height: 250,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 2,
+        itemCount: cafes.length,
         itemBuilder: (context, index) {
           final cafe = cafes[index];
           return GestureDetector(
@@ -362,6 +364,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHiddenGemsGrid(BuildContext context, List<Cafe> cafes) {
+    if (cafes.isEmpty) return const SizedBox.shrink();
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -371,9 +375,9 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisSpacing: 15,
         childAspectRatio: 0.8,
       ),
-      itemCount: 2,
+      itemCount: cafes.length,
       itemBuilder: (context, index) {
-        final cafe = cafes[index + 2];
+        final cafe = cafes[index];
         return GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CafeDetailScreen(cafe: cafe))),
           child: Container(
