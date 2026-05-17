@@ -1,10 +1,7 @@
 {
   "version": 2,
   "public": true,
-  "framework": null,
-  "installCommand": "flutter pub get",
-  "buildCommand": "flutter build web --release",
-  "outputDirectory": "build/web",
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/(.*)",

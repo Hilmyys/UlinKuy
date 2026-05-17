@@ -33,7 +33,7 @@ class _MoodMatcherScreenState extends State<MoodMatcherScreen> {
 
     // Secondary Chip Filter (Mock)
     if (_activeChip == 'Specialty Coffee') {
-      filteredCafes = filteredCafes.where((c) => c.priceRange == '\$\$\$').toList();
+      filteredCafes = filteredCafes.where((c) => c.priceRange == r'$$$').toList();
     }
 
     return Scaffold(
