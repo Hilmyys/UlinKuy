@@ -2,8 +2,8 @@
   "version": 2,
   "public": true,
   "framework": null,
-  "installCommand": "flutter/bin/flutter pub get",
-  "buildCommand": "flutter/bin/flutter build web --release",
+  "installCommand": "flutter pub get",
+  "buildCommand": "flutter build web --release",
   "outputDirectory": "build/web",
   "rewrites": [
     {
