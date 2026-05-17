@@ -7,15 +7,42 @@ import 'features/ranking/presentation/pages/ranking_screen.dart';
 import 'features/match/presentation/pages/mood_matcher_screen.dart';
 import 'features/rewards/presentation/pages/rewards_screen.dart';
 import 'features/common/presentation/providers/loyalty_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'features/common/presentation/providers/auth_provider.dart';
+import 'features/common/presentation/providers/favorite_provider.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
+import 'data/datasources/local/database_helper.dart';
+import 'data/repositories/cafe_repository.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  if (!kIsWeb) {
+    // Initialize DB and seed initial data (Only for Mobile)
+    try {
+      final dbHelper = DatabaseHelper.instance;
+      await dbHelper.seedCafes(CafeRepository.getCafesAsMaps());
+      
+      // Create default admin if not exists
+      await dbHelper.insertUser({
+        'id': '2',
+        'name': 'Admin UlinKuy',
+        'email': 'admin@ulinkuy.com',
+        'password': 'admin123',
+        'avatarUrl': 'https://i.pravatar.cc/150?u=admin',
+        'role': 'admin',
+      });
+    } catch (e) {
+      debugPrint('Database initialization failed: $e');
+    }
+  }
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LoyaltyProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
       ],
       child: const UlinKuyApp(),
     ),

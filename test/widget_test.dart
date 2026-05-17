@@ -1,6 +1,6 @@
 // This is a basic Flutter widget test.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sistem_aplikasi_bergerak/main.dart';
+import 'package:ulinkuy/main.dart';
 
 void main() {
   testWidgets('App load smoke test', (WidgetTester tester) async {

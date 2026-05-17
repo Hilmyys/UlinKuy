@@ -1,27 +1,38 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class LoyaltyProvider with ChangeNotifier {
   int _points = 2450;
   String _rank = 'Caffeine Master';
-  int _nextTierPoints = 550;
-  String _nextReward = 'Cold Brew';
 
   int get points => _points;
   String get rank => _rank;
-  int get nextTierPoints => _nextTierPoints;
-  String get nextReward => _nextReward;
+
+  int get nextTierPoints => 3000 - _points;
+  String get nextReward => 'Gold Brew';
 
   void addPoints(int amount) {
     _points += amount;
+    _updateRank();
     notifyListeners();
   }
 
   bool redeemPoints(int amount) {
     if (_points >= amount) {
       _points -= amount;
+      _updateRank();
       notifyListeners();
       return true;
     }
     return false;
+  }
+
+  void _updateRank() {
+    if (_points >= 5000) {
+      _rank = 'Coffee Legend';
+    } else if (_points >= 2000) {
+      _rank = 'Caffeine Master';
+    } else {
+      _rank = 'Novice Brewer';
+    }
   }
 }

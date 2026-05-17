@@ -5,6 +5,8 @@ import '../../../../data/models/cafe_model.dart';
 import '../../../../data/repositories/cafe_repository.dart';
 import '../../../../features/details/presentation/pages/cafe_detail_screen.dart';
 import '../../../common/presentation/providers/auth_provider.dart';
+import '../../../common/presentation/providers/loyalty_provider.dart';
+import '../../../auth/presentation/pages/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,79 +29,69 @@ class _HomeScreenState extends State<HomeScreen> {
   void _applyFilters() {
     setState(() {
       var allCafes = CafeRepository.getMockCafes();
-      
-      // Filter by search query
       if (_searchQuery.isNotEmpty) {
         allCafes = allCafes.where((c) => 
           c.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
-          c.location.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          c.tags.any((t) => t.toLowerCase().contains(_searchQuery.toLowerCase()))
+          c.location.toLowerCase().contains(_searchQuery.toLowerCase())
         ).toList();
       }
-
-      // Filter by mood
       if (_selectedMood.isNotEmpty) {
-        String tagToMatch = '';
-        if (_selectedMood == 'WFC') tagToMatch = 'WORK-FRIENDLY';
-        if (_selectedMood == 'Romantic') tagToMatch = 'BEST VIBE';
-        if (_selectedMood == 'Family') tagToMatch = 'AESTHETIC'; // Mapping to existing mock tags
-        
-        if (tagToMatch.isNotEmpty) {
-          allCafes = allCafes.where((c) => c.tags.contains(tagToMatch)).toList();
-        }
+        allCafes = allCafes.where((c) => c.tags.contains(_selectedMood)).toList();
       }
-
       _filteredCafes = allCafes;
     });
   }
 
-  void _onSearchChanged(String query) {
-    _searchQuery = query;
-    _applyFilters();
-  }
-
-  void _onMoodSelected(String mood) {
-    setState(() {
-      if (_selectedMood == mood) {
-        _selectedMood = ''; // Deselect if same mood is clicked
-      } else {
-        _selectedMood = mood;
-      }
-      _applyFilters();
-    });
+  void _showAlert(String title, String message, {bool isError = false}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Icon(isError ? Icons.error_outline : Icons.check_circle_outline, color: isError ? Colors.red : Colors.green),
+            const SizedBox(width: 12),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold))),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context).currentUser;
     final popularCafes = _filteredCafes.take(2).toList();
-    final hiddenGems = _filteredCafes.skip(2).take(2).toList();
+    final hiddenGems = _filteredCafes.skip(2).toList();
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
-              const SizedBox(height: 25),
+              _buildHeader(user),
+              const SizedBox(height: 20),
+              _buildWelcomeSection(),
+              const SizedBox(height: 20),
               _buildSearchBar(),
+              const SizedBox(height: 20),
+              _buildPointsCard(),
               const SizedBox(height: 25),
-              _buildMoodMatcherSection(),
+              _buildMoodMatcher(),
               const SizedBox(height: 30),
-              if (_searchQuery.isEmpty) ...[
-                _buildSectionTitle('Cafe Terpopuler Minggu Ini'),
-                const SizedBox(height: 15),
-                _buildPopularList(context, popularCafes),
-                const SizedBox(height: 30),
-                _buildSectionTitle('Explore Hidden Gems'),
-                const SizedBox(height: 15),
-                _buildHiddenGemsGrid(context, hiddenGems),
-              ] else ...[
-                _buildSectionTitle('Hasil Pencarian untuk "$_searchQuery"'),
-                const SizedBox(height: 15),
-                _buildSearchResultsGrid(context, _filteredCafes),
-              ],
+              _buildSectionHeader('Cafe Terpopuler Minggu Ini', 'Pilihan warga Bandung paling favorit.'),
+              const SizedBox(height: 15),
+              _buildPopularList(popularCafes),
+              const SizedBox(height: 30),
+              _buildSectionHeader('Explore Hidden Gems', null),
+              const SizedBox(height: 15),
+              _buildHiddenGemsGrid(hiddenGems),
             ],
           ),
         ),
@@ -107,205 +99,112 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSearchResultsGrid(BuildContext context, List<Cafe> cafes) {
-    if (cafes.isEmpty) {
-      return const Center(child: Text('Tidak ada cafe ditemukan.'));
-    }
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: cafes.length,
-      itemBuilder: (context, index) {
-        final cafe = cafes[index];
-        return GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CafeDetailScreen(cafe: cafe))),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              image: DecorationImage(image: NetworkImage(cafe.imageUrl), fit: BoxFit.cover),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withAlpha(179)]),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (cafe.tags.isNotEmpty)
-                    Text(cafe.tags.first, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
-                  Text(cafe.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeader() {
-    final user = Provider.of<AuthProvider>(context).currentUser;
+  Widget _buildHeader(user) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundImage: NetworkImage(user?.avatarUrl ?? 'https://i.pravatar.cc/150?u=hilmi'),
-                ),
-                const SizedBox(width: 10),
-                Text('UlinKuy', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
-              ],
+            GestureDetector(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+                child: user?.avatarUrl == null ? const Icon(Icons.person, size: 20, color: AppColors.primary) : null,
+              ),
             ),
-            const SizedBox(height: 15),
-            Text('Halo, ${user?.name ?? 'Akang Teteh'}!', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+            const SizedBox(width: 12),
             const Text(
-              'Cari tempat ulin di\nmana hari ini?',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, height: 1.2),
+              'UlinKuy',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary),
             ),
           ],
         ),
-        IconButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Logout'),
-                content: const Text('Apakah Anda yakin ingin keluar?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Batal'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Provider.of<AuthProvider>(context, listen: false).logout();
-                    },
-                    child: const Text('Keluar', style: TextStyle(color: Colors.red)),
-                  ),
-                ],
-              ),
-            );
-          },
-          icon: const Icon(Icons.logout, size: 24),
-        )
+      ],
+    );
+  }
+
+  Widget _buildWelcomeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Halo, Akang Teteh!', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+        const SizedBox(height: 4),
+        const Text(
+          'Cari tempat ulin di\nmana hari ini?',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, height: 1.1),
+        ),
       ],
     );
   }
 
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10, offset: const Offset(0, 5))],
-      ),
+      decoration: BoxDecoration(color: const Color(0xFFF5F0EB), borderRadius: BorderRadius.circular(15)),
       child: TextField(
-        onChanged: _onSearchChanged,
-        decoration: const InputDecoration(
-          hintText: 'Cari kopi, suasana, atau lokasi...',
-          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: Icon(Icons.search, color: Colors.grey),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 15),
+        onChanged: (v) { _searchQuery = v; _applyFilters(); },
+        decoration: InputDecoration(hintText: 'Cari kopi, suasana, atau lokasi...', hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14), prefixIcon: Icon(Icons.search, color: Colors.grey.shade500), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 15)),
+      ),
+    );
+  }
+
+  Widget _buildPointsCard() {
+    return Consumer<LoyaltyProvider>(
+      builder: (context, provider, _) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(20)),
+        child: Row(
+          children: [
+            const Icon(Icons.credit_card, color: Colors.white70, size: 40),
+            const SizedBox(width: 15),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Poin Kamu', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)), Text('${provider.points} Poin', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))])),
+            ElevatedButton(
+              onPressed: () {
+                if (provider.redeemPoints(500)) {
+                  _showAlert('Berhasil!', 'Poin kamu berhasil ditukar dengan Voucher Kopi.');
+                } else {
+                  _showAlert('Gagal', 'Poin kamu tidak mencukupi (Min. 500 PTS).', isError: true);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4A3427), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+              child: const Text('Tukar Poin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildMoodMatcherSection() {
+  Widget _buildMoodMatcher() {
     final moods = [
-      {'icon': Icons.laptop, 'label': 'WFC', 'color': const Color(0xFF4A4A4A)},
-      {'icon': Icons.favorite_border, 'label': 'Romantic', 'color': const Color(0xFFD4A373)},
-      {'icon': Icons.groups_outlined, 'label': 'Family', 'color': const Color(0xFF8E8E8E)},
+      {'icon': Icons.laptop, 'label': 'WFH', 'tag': 'WORK-FRIENDLY'},
+      {'icon': Icons.favorite_border, 'label': 'Romantic', 'tag': 'BEST VIBE'},
+      {'icon': Icons.groups_outlined, 'label': 'Family', 'tag': 'AESTHETIC'},
     ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Mood Matcher', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _selectedMood = '';
-                  _applyFilters();
-                });
-              }, 
-              child: const Text('Lihat Semua', style: TextStyle(color: AppColors.accent, fontSize: 12))
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: moods.map((mood) {
-            final label = mood['label'] as String;
-            final isSelected = _selectedMood == label;
-            return GestureDetector(
-              onTap: () => _onMoodSelected(label),
-              child: Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? (mood['color'] as Color).withAlpha(25) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? (mood['color'] as Color) : Colors.grey.shade200,
-                    width: isSelected ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      mood['icon'] as IconData, 
-                      size: 16, 
-                      color: isSelected ? (mood['color'] as Color) : Colors.grey,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      label, 
-                      style: TextStyle(
-                        fontSize: 12, 
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? (mood['color'] as Color) : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Mood Matcher', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), Text('Lihat Semua', style: TextStyle(color: AppColors.textSecondary, fontSize: 12))]),
+        const SizedBox(height: 12),
+        Row(children: moods.map((m) {
+          final isSelected = _selectedMood == m['tag'];
+          return Expanded(child: GestureDetector(
+            onTap: () { setState(() { _selectedMood = isSelected ? '' : m['tag'] as String; _applyFilters(); }); },
+            child: Container(margin: const EdgeInsets.only(right: 8), padding: const EdgeInsets.symmetric(vertical: 12), decoration: BoxDecoration(color: isSelected ? AppColors.primary : const Color(0xFFF2EBE4), borderRadius: BorderRadius.circular(15)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(m['icon'] as IconData, color: isSelected ? Colors.white : Colors.black87, size: 18), const SizedBox(width: 8), Text(m['label'] as String, style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 12))])),
+          ));
+        }).toList()),
       ],
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+  Widget _buildSectionHeader(String title, String? sub) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)), if (sub != null) ...[const SizedBox(height: 2), Text(sub, style: TextStyle(color: AppColors.textSecondary, fontSize: 13))]]);
   }
 
-  Widget _buildPopularList(BuildContext context, List<Cafe> cafes) {
-    if (cafes.isEmpty) return const SizedBox.shrink();
-    
+  Widget _buildPopularList(List<Cafe> cafes) {
     return SizedBox(
-      height: 250,
+      height: 280,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: cafes.length,
@@ -313,96 +212,24 @@ class _HomeScreenState extends State<HomeScreen> {
           final cafe = cafes[index];
           return GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CafeDetailScreen(cafe: cafe))),
-            child: Container(
-              width: 180,
-              margin: const EdgeInsets.only(right: 15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10)],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Image.network(cafe.imageUrl, height: 140, width: double.infinity, fit: BoxFit.cover),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(cafe.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on_outlined, size: 12, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Expanded(child: Text(cafe.location, style: const TextStyle(color: Colors.grey, fontSize: 11), overflow: TextOverflow.ellipsis)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: cafe.tags.take(2).map((tag) => Container(
-                            margin: const EdgeInsets.only(right: 5),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
-                            child: Text(tag, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey)),
-                          )).toList(),
-                        ),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
+            child: Container(width: 240, margin: const EdgeInsets.only(right: 15), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 10, offset: const Offset(0, 5))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Stack(children: [ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(20)), child: Image.network(cafe.imageUrl, height: 160, width: double.infinity, fit: BoxFit.cover)), Positioned(top: 10, right: 10, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFF6AB04C), borderRadius: BorderRadius.circular(8)), child: Row(children: [const Icon(Icons.star, color: Colors.white, size: 12), const SizedBox(width: 4), Text(cafe.rating.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))]))), Positioned(bottom: 10, left: 10, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.black.withAlpha(150), borderRadius: BorderRadius.circular(10)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.amber, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('Sedikit Ramai', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))])))]), Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(cafe.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)), const SizedBox(height: 4), Row(children: [const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey), const SizedBox(width: 4), Text(cafe.location, style: const TextStyle(color: Colors.grey, fontSize: 12))]), const SizedBox(height: 10), Row(children: [_buildTag('PASTRY'), const SizedBox(width: 8), _buildTag('COZY')])]))])),
           );
         },
       ),
     );
   }
 
-  Widget _buildHiddenGemsGrid(BuildContext context, List<Cafe> cafes) {
-    if (cafes.isEmpty) return const SizedBox.shrink();
+  Widget _buildTag(String label) {
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFF5F0EB), borderRadius: BorderRadius.circular(6)), child: Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey)));
+  }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: cafes.length,
-      itemBuilder: (context, index) {
-        final cafe = cafes[index];
-        return GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CafeDetailScreen(cafe: cafe))),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              image: DecorationImage(image: NetworkImage(cafe.imageUrl), fit: BoxFit.cover),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withAlpha(179)]),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(cafe.tags.first, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
-                  Text(cafe.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  Widget _buildHiddenGemsGrid(List<Cafe> cafes) {
+    return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15, childAspectRatio: 0.8), itemCount: cafes.length, itemBuilder: (context, index) {
+      final cafe = cafes[index];
+      return GestureDetector(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CafeDetailScreen(cafe: cafe))),
+        child: ClipRRect(borderRadius: BorderRadius.circular(20), child: Stack(children: [Image.network(cafe.imageUrl, height: double.infinity, width: double.infinity, fit: BoxFit.cover), Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withAlpha(180)]))), Padding(padding: const EdgeInsets.all(12), child: Column(mainAxisAlignment: MainAxisAlignment.end, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(cafe.tags.first, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)), const SizedBox(height: 2), Text(cafe.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14))]))])),
+      );
+    });
   }
 }

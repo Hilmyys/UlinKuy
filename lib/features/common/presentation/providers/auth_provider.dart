@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../data/models/user_model.dart';
+import '../../../../data/datasources/local/database_helper.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _currentUser;
@@ -8,15 +9,14 @@ class AuthProvider with ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _isAuthenticated;
 
-  // Mock user database
-  final List<User> _users = [
+  // Fallback users for Web
+  final List<User> _webUsers = [
     User(
       id: '1',
       name: 'Hilmi',
       email: 'hilmi@ulinkuy.com',
       password: 'password123',
       avatarUrl: 'https://i.pravatar.cc/150?u=hilmi',
-      role: UserRole.user,
     ),
     User(
       id: '2',
@@ -29,47 +29,117 @@ class AuthProvider with ChangeNotifier {
   ];
 
   Future<bool> login(String email, String password) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
+    if (kIsWeb) {
+      // Logic for Web (In-memory)
+      try {
+        final user = _webUsers.firstWhere(
+          (u) => u.email == email && u.password == password,
+        );
+        _currentUser = user;
+        _isAuthenticated = true;
+        notifyListeners();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    } else {
+      // Logic for Mobile (SQLite)
+      final userMap = await DatabaseHelper.instance.getUser(email, password);
+      
+      if (userMap != null) {
+        _currentUser = User(
+          id: userMap['id'],
+          name: userMap['name'],
+          email: userMap['email'],
+          password: userMap['password'],
+          avatarUrl: userMap['avatarUrl'],
+          role: userMap['role'] == 'admin' ? UserRole.admin : UserRole.user,
+        );
+        _isAuthenticated = true;
+        notifyListeners();
+        return true;
+      }
+    }
+    return false;
+  }
 
-    try {
-      final user = _users.firstWhere(
-        (u) => u.email == email && u.password == password,
-      );
-      _currentUser = user;
-      _isAuthenticated = true;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      return false;
+  Future<bool> checkEmailExists(String email) async {
+    if (kIsWeb) {
+      return _webUsers.any((u) => u.email == email);
+    } else {
+      return await DatabaseHelper.instance.checkEmailExists(email);
     }
   }
 
   Future<bool> register(String name, String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1));
+    if (kIsWeb) {
+      // Logic for Web
+      if (_webUsers.any((u) => u.email == email)) return false;
+      
+      final newUser = User(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        email: email,
+        password: password,
+        avatarUrl: 'https://i.pravatar.cc/150?u=$name',
+      );
+      _webUsers.add(newUser);
+      return await login(email, password);
+    } else {
+      // Logic for Mobile
+      final newUser = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'name': name,
+        'email': email,
+        'password': password,
+        'avatarUrl': 'https://i.pravatar.cc/150?u=$name',
+        'role': 'user',
+      };
 
-    if (_users.any((u) => u.email == email)) {
-      return false;
+      try {
+        await DatabaseHelper.instance.insertUser(newUser);
+        return await login(email, password);
+      } catch (e) {
+        return false;
+      }
     }
-
-    final newUser = User(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      email: email,
-      password: password,
-      avatarUrl: 'https://i.pravatar.cc/150?u=$name',
-    );
-
-    _users.add(newUser);
-    _currentUser = newUser;
-    _isAuthenticated = true;
-    notifyListeners();
-    return true;
   }
 
   void logout() {
     _currentUser = null;
     _isAuthenticated = false;
+    notifyListeners();
+  }
+
+  Future<void> updateProfile(String name, String email, String? avatarUrl) async {
+    if (_currentUser == null) return;
+
+    final updatedUser = User(
+      id: _currentUser!.id,
+      name: name,
+      email: email,
+      password: _currentUser!.password,
+      avatarUrl: avatarUrl ?? _currentUser!.avatarUrl,
+      role: _currentUser!.role,
+    );
+
+    if (kIsWeb) {
+      final index = _webUsers.indexWhere((u) => u.id == _currentUser!.id);
+      if (index != -1) {
+        _webUsers[index] = updatedUser;
+      }
+    } else {
+      await DatabaseHelper.instance.insertUser({
+        'id': updatedUser.id,
+        'name': updatedUser.name,
+        'email': updatedUser.email,
+        'password': updatedUser.password,
+        'avatarUrl': updatedUser.avatarUrl,
+        'role': updatedUser.role == UserRole.admin ? 'admin' : 'user',
+      });
+    }
+
+    _currentUser = updatedUser;
     notifyListeners();
   }
 }

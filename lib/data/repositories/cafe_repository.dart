@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../models/cafe_model.dart';
 
 class CafeRepository {
@@ -6,7 +7,7 @@ class CafeRepository {
       id: '1',
       name: 'Seroja Bake & Coffee',
       location: 'Jl. Cikutra No.164, Bandung',
-      imageUrl: 'https://images.unsplash.com/photo-1511081692775-05d0f180a065?auto=format&fit=crop&q=80&w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=800',
       rating: 4.9,
       reviewsCount: 1200,
       priceRange: r'$$',
@@ -19,7 +20,7 @@ class CafeRepository {
         MenuDetail(
           name: 'Pavlova Buah Musiman',
           price: '35k',
-          imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=400',
+          imageUrl: 'https://images.unsplash.com/photo-1511081692775-05d0f180a065?auto=format&fit=crop&q=80&w=400',
           description: 'Meringue renyah dengan krim lembut and topping buah lokal segar.',
         ),
         MenuDetail(
@@ -44,7 +45,7 @@ class CafeRepository {
       id: '2',
       name: 'Lacamera Coffee',
       location: 'Jl. Naripan No.99, Bandung',
-      imageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800',
       rating: 4.8,
       reviewsCount: 850,
       priceRange: r'$$',
@@ -57,13 +58,13 @@ class CafeRepository {
         MenuDetail(
           name: 'Choco Avocado Coffee',
           price: '42k',
-          imageUrl: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&q=80&w=400',
+          imageUrl: 'https://images.unsplash.com/photo-1572289667794-39f24e93d49e?auto=format&fit=crop&q=80&w=400',
           description: 'Perpaduan alpukat segar, cokelat premium, dan espresso.',
         ),
         MenuDetail(
           name: 'Waffle Classic',
           price: '38k',
-          imageUrl: 'https://images.unsplash.com/photo-1513530534585-c7b1394c6d51?auto=format&fit=crop&q=80&w=400',
+          imageUrl: 'https://images.unsplash.com/photo-1562329265-95a6d7a83440?auto=format&fit=crop&q=80&w=400',
           description: 'Waffle renyah dengan topping es krim vanilla.',
         ),
       ],
@@ -74,7 +75,7 @@ class CafeRepository {
       id: '3',
       name: 'Blue Doors',
       location: 'Jl. Alkateri No.2, Bandung',
-      imageUrl: 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&q=80&w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=800',
       rating: 4.7,
       reviewsCount: 920,
       priceRange: r'$$$',
@@ -87,7 +88,7 @@ class CafeRepository {
         MenuDetail(
           name: 'Magic',
           price: '40k',
-          imageUrl: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=400',
+          imageUrl: 'https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&q=80&w=400',
           description: 'Double ristretto dengan susu hangat, rasa kopi lebih bold.',
         ),
         MenuDetail(
@@ -104,7 +105,7 @@ class CafeRepository {
       id: '4',
       name: 'Kopi Toko Djawa',
       location: 'Jl. Braga No.81, Bandung',
-      imageUrl: 'https://images.unsplash.com/photo-1461023233037-2440c0e735fe?auto=format&fit=crop&q=80&w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1559925393-8be0ec41b5ec?auto=format&fit=crop&q=80&w=800',
       rating: 4.6,
       reviewsCount: 2100,
       priceRange: r'$',
@@ -117,7 +118,7 @@ class CafeRepository {
         MenuDetail(
           name: 'Es Kopi Awan',
           price: '24k',
-          imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=400',
+          imageUrl: 'https://images.unsplash.com/photo-1461023233037-2440c0e735fe?auto=format&fit=crop&q=80&w=400',
           description: 'Es kopi susu gula aren dengan foam lembut di atasnya.',
         ),
         MenuDetail(
@@ -464,19 +465,22 @@ class CafeRepository {
 
   static List<Cafe> getMockCafes() => List.unmodifiable(_cafes);
 
-  static void addCafe(Cafe cafe) {
-    _cafes.add(cafe);
-  }
-
-  static void updateCafe(Cafe updatedCafe) {
-    final index = _cafes.indexWhere((c) => c.id == updatedCafe.id);
-    if (index != -1) {
-      _cafes[index] = updatedCafe;
-    }
-  }
-
-  static void deleteCafe(String id) {
-    _cafes.removeWhere((c) => c.id == id);
+  static List<Map<String, dynamic>> getCafesAsMaps() {
+    return _cafes.map((cafe) => {
+      'id': cafe.id,
+      'name': cafe.name,
+      'location': cafe.location,
+      'imageUrl': cafe.imageUrl,
+      'rating': cafe.rating,
+      'reviewsCount': cafe.reviewsCount,
+      'priceRange': cafe.priceRange,
+      'wifiSpeed': cafe.wifiSpeed,
+      'crowdLevel': cafe.crowdLevel,
+      'tasteRating': cafe.tasteRating,
+      'tags': jsonEncode(cafe.tags),
+      'facilities': jsonEncode(cafe.facilities),
+      'operatingHours': cafe.operatingHours,
+    }).toList();
   }
 
   static List<Cafe> searchCafes(String query) {

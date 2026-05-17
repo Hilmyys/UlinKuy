@@ -146,6 +146,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "google_fonts",
+      "rootUri": "file:///C:/Users/THINKPAD/AppData/Local/Pub/Cache/hosted/pub.dev/google_fonts-6.3.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
       "name": "google_maps",
       "rootUri": "file:///C:/Users/THINKPAD/AppData/Local/Pub/Cache/hosted/pub.dev/google_maps-8.2.0",
       "packageUri": "lib/",
@@ -560,7 +566,7 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "sistem_aplikasi_bergerak",
+      "name": "UlinKuy",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.11"
