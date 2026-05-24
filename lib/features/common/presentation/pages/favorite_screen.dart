@@ -10,8 +10,10 @@ class FavoriteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Favorit Saya', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Favorit Saya'),
+        centerTitle: true,
       ),
       body: Consumer<FavoriteProvider>(
         builder: (context, provider, child) {
@@ -22,98 +24,48 @@ class FavoriteScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Belum ada cafe favorit.',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                  Container(
+                    padding: const EdgeInsets.all(30),
+                    decoration: BoxDecoration(color: const Color(0xFFF2EBE4), shape: BoxShape.circle),
+                    child: const Icon(Icons.favorite_rounded, size: 80, color: AppColors.accent),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Mulai jelajahi dan simpan cafe yang kamu suka!',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
+                  const SizedBox(height: 30),
+                  const Text('Belum ada favorit', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 12),
+                  const Text('Jelajahi Bandung dan simpan tempat\nyang bikin kamu jatuh cinta.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5)),
                 ],
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             itemCount: favorites.length,
             itemBuilder: (context, index) {
               final cafe = favorites[index];
               return GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => CafeDetailScreen(cafe: cafe)),
-                ),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CafeDetailScreen(cafe: cafe))),
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 10)],
-                  ),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 15, offset: const Offset(0, 8))]),
                   child: Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          cafe.imageUrl,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 80,
-                            height: 80,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.broken_image, color: Colors.grey),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
+                      ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(cafe.imageUrl, width: 85, height: 85, fit: BoxFit.cover)),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              cafe.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined, size: 12, color: Colors.grey),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    cafe.location,
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(Icons.star, color: Colors.amber, size: 14),
-                                const SizedBox(width: 4),
-                                Text(
-                                  cafe.rating.toString(),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                              ],
-                            ),
+                            Text(cafe.name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                            const SizedBox(height: 6),
+                            Row(children: [const Icon(Icons.location_on_rounded, size: 14, color: Colors.grey), const SizedBox(width: 4), Expanded(child: Text(cafe.location, style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis))]),
+                            const SizedBox(height: 10),
+                            Row(children: [const Icon(Icons.star_rounded, color: Colors.amber, size: 18), const SizedBox(width: 4), Text(cafe.rating.toString(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13))]),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.favorite, color: Colors.red),
-                        onPressed: () => provider.toggleFavorite(cafe),
-                      ),
+                      IconButton(icon: const Icon(Icons.favorite_rounded, color: Colors.red, size: 28), onPressed: () => provider.toggleFavorite(cafe)),
                     ],
                   ),
                 ),

@@ -17,11 +17,11 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> allScreens = [
-      widget.screens[0], // Explore
-      widget.screens[1], // Ranking
-      widget.screens[2], // Match
-      const FavoriteScreen(), // Saved
-      widget.screens[3], // Rewards
+      widget.screens[0], // HomeScreen
+      widget.screens[1], // RankingScreen
+      widget.screens[2], // MoodMatcherScreen
+      const FavoriteScreen(), // Favorite Screen (New)
+      widget.screens[3], // RewardsScreen
     ];
 
     return Scaffold(

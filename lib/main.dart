@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/bottom_nav_bar.dart';
 import 'features/home/presentation/pages/home_screen.dart';
@@ -7,7 +8,6 @@ import 'features/ranking/presentation/pages/ranking_screen.dart';
 import 'features/match/presentation/pages/mood_matcher_screen.dart';
 import 'features/rewards/presentation/pages/rewards_screen.dart';
 import 'features/common/presentation/providers/loyalty_provider.dart';
-import 'package:flutter/foundation.dart';
 import 'features/common/presentation/providers/auth_provider.dart';
 import 'features/common/presentation/providers/favorite_provider.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
@@ -18,17 +18,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   if (!kIsWeb) {
-    // Initialize DB and seed initial data (Only for Mobile)
     try {
       final dbHelper = DatabaseHelper.instance;
       await dbHelper.seedCafes(CafeRepository.getCafesAsMaps());
       
-      // Create default admin if not exists
       await dbHelper.insertUser({
         'id': '2',
         'name': 'Admin UlinKuy',
         'email': 'admin@ulinkuy.com',
-        'password': 'admin123',
+        'password': 'admin123!A',
         'avatarUrl': 'https://i.pravatar.cc/150?u=admin',
         'role': 'admin',
       });

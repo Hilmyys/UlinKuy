@@ -19,7 +19,6 @@ class _MoodMatcherScreenState extends State<MoodMatcherScreen> {
   Widget build(BuildContext context) {
     final allCafes = CafeRepository.getMockCafes();
     
-    // Logic filtering
     List<Cafe> filteredCafes = allCafes;
     if (selectedVibe == 'Fokus Kerja') {
       filteredCafes = allCafes.where((c) => c.tags.contains('WORK-FRIENDLY')).toList();
@@ -31,7 +30,6 @@ class _MoodMatcherScreenState extends State<MoodMatcherScreen> {
       filteredCafes = allCafes.where((c) => c.tags.contains('AESTHETIC')).toList();
     }
 
-    // Secondary Chip Filter (Mock)
     if (_activeChip == 'Specialty Coffee') {
       filteredCafes = filteredCafes.where((c) => c.priceRange == r'$$$').toList();
     }

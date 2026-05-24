@@ -22,7 +22,6 @@ class DatabaseHelper {
   }
 
   Future _createDB(Database db, int version) async {
-    // Users Table
     await db.execute('''
       CREATE TABLE users (
         id TEXT PRIMARY KEY,
@@ -34,7 +33,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Cafes Table (Simplified for local storage)
     await db.execute('''
       CREATE TABLE cafes (
         id TEXT PRIMARY KEY,
@@ -47,8 +45,8 @@ class DatabaseHelper {
         wifiSpeed INTEGER,
         crowdLevel REAL,
         tasteRating TEXT,
-        tags TEXT, -- JSON string
-        facilities TEXT, -- JSON string
+        tags TEXT,
+        facilities TEXT,
         operatingHours TEXT
       )
     ''');
